@@ -1,9 +1,7 @@
 from typing import Union
-
 import asyncpg
 from asyncpg import Connection
 from asyncpg.pool import Pool
-
 from data import config
 
 
@@ -87,6 +85,21 @@ class Database:
         """
         await self.execute(sql, execute=True)
 
+    async def create_table_exams(self):
+        sql = """
+        CREATE TABLE IF NOT EXISTS imtihon(
+        id SERIAL UNIQUE,
+        viloyat_nomi VARCHAR (50) NOT NULL,
+        student_present VARCHAR(10) NOT NULL,
+        student_absent VARCHAR(10) NULL,
+        student_removed VARCHAR(10) NULL,
+        supervisor_present VARCHAR(10) NOT NULL,
+        supervisor_absent VARCHAR(10) NOT NULL,
+        FOREIGN KEY (viloyat_nomi) REFERENCES viloyatlar(viloyat_nomi)
+        );
+        """
+        await self.execute(sql, execute=True)
+
     @staticmethod
     def format_args(sql, parameters: dict):
         sql += " AND ".join([
@@ -95,11 +108,24 @@ class Database:
         ])
         return sql, tuple(parameters.values())
 
+    async def add_info_about_exam(self, viloyat_nomi, student_present, student_absent,
+                                  student_removed, supervisor_present, supervisor_absent):
+        sql = "INSERT INTO imtihon(viloyat_nomi, student_present, student_absent, student_removed, supervisor_present, supervisor_absent) \
+               VALUES($1, $2, $3, $4, $5, $6);"
+        await self.execute(sql, viloyat_nomi, student_present, student_absent, student_removed, supervisor_present,
+                           supervisor_absent, execute=True)
+
+    async def get_info_about_exam(self):
+        sql = "SELECT * FROM imtihon"
+        await self.execute(fetch=True)
+
     # yangi bino qo'shish
-    async def add_building(self, qaysi_viloyatda, bino_nomi, bino_manzili, bino_sigimi, masul_shaxs, telefon_raqami, telegram_id):
+    async def add_building(self, qaysi_viloyatda, bino_nomi, bino_manzili, bino_sigimi, masul_shaxs, telefon_raqami,
+                           telegram_id):
         sql = "INSERT INTO bino(qaysi_viloyatda, bino_nomi, bino_manzili, bino_sigimi, masul_shaxs, telefon_raqami, telegram_id) " \
               "VALUES ($1, $2, $3, $4, $5, $6, $7)"
-        return await self.execute(sql, qaysi_viloyatda, bino_nomi, bino_manzili, bino_sigimi, masul_shaxs, telefon_raqami, telegram_id, execute=True)
+        return await self.execute(sql, qaysi_viloyatda, bino_nomi, bino_manzili, bino_sigimi, masul_shaxs,
+                                  telefon_raqami, telegram_id, execute=True)
 
     # yangi viloyat qo'shish
     async def add_region(self, viloyat_nomi, masul_shaxs, telefon_raqami, telegram_id):

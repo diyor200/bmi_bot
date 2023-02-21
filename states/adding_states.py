@@ -13,3 +13,12 @@ class AddBinoState(StatesGroup):
 
 class AddingAdmin(StatesGroup):
     admin_id = State()
+
+
+class AddExamInfos(StatesGroup):
+    viloyat = State()
+    student_present = State()
+    student_absent = State()
+    student_removed = State()
+    supervisor_present = State()
+    supervisor_absent = State()

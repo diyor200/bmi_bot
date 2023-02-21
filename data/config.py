@@ -1,4 +1,5 @@
 from environs import Env
+from pathlib import Path
 
 # environs kutubxonasidan foydalanish
 env = Env()
@@ -14,13 +15,22 @@ DB_NAME = env.str("DB_NAME")
 DB_HOST = env.str("DB_HOST")
 
 
-class ChangeList:
+class AdminList:
+
     def __init__(self):
         self.admins = ["5697570359"]
 
     def return_list(self):
-        return self.admins
+        print(self.admins)
 
-    async def add_element(self, var):
-        self.admins.append(var)
-        return self.admins
+    def add_element(self, var):
+        copy_admins = self.admins.copy()
+        copy_admins.append(var)
+        self.admins = copy_admins
+        # print(self.admins)
+        return True
+
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+print(BASE_DIR)

@@ -50,5 +50,10 @@ class Aquarium:
             threading.Event().wait(random.uniform(0.5, 2.0))
 
 
-aquarium = Aquarium()
-aquarium.run()
+# aquarium = Aquarium()
+# aquarium.run()
+male_fish = [Fish('male') for _ in range(random.randint(1, 3))]
+female_fish = [Fish('female') for _ in range(random.randint(1, 3))]
+print(male_fish)
+print(female_fish)
+print(random.random())

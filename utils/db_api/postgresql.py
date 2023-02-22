@@ -112,12 +112,12 @@ class Database:
                                   student_removed, supervisor_present, supervisor_absent):
         sql = "INSERT INTO imtihon(viloyat_nomi, student_present, student_absent, student_removed, supervisor_present, supervisor_absent) \
                VALUES($1, $2, $3, $4, $5, $6);"
-        await self.execute(sql, viloyat_nomi, student_present, student_absent, student_removed, supervisor_present,
+        return await self.execute(sql, viloyat_nomi, student_present, student_absent, student_removed, supervisor_present,
                            supervisor_absent, execute=True)
 
     async def get_info_about_exam(self):
         sql = "SELECT * FROM imtihon"
-        await self.execute(fetch=True)
+        return await self.execute(sql, fetch=True)
 
     # yangi bino qo'shish
     async def add_building(self, qaysi_viloyatda, bino_nomi, bino_manzili, bino_sigimi, masul_shaxs, telefon_raqami,

@@ -15,7 +15,7 @@ def get_admin_list() -> list:
 @dp.message_handler(chat_id=get_admin_list(), commands=['imtihon_malumotlari'])
 async def get_info_exam(message: types.Message):
     infos = await db.get_info_about_exam()
-    await message.answer(text=infos)
+    await message.answer(text=str(infos))
 
 
 @dp.message_handler(chat_id=get_admin_list(), commands=['add_info_exam'])

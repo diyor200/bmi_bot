@@ -100,6 +100,16 @@ class Database:
         """
         await self.execute(sql, execute=True)
 
+    async def create_table_admins(self):
+        sql = """
+        CREATE TABLE IF NOT EXISTS admins(
+            admin_id BIGINT not null unique,
+            admin_name varchar(200) not null,
+            FOREIGN KEY (admin_id) REFERENCES users(telegram_id)    
+        );
+        """
+        await self.execute(sql, execute=True)
+
     @staticmethod
     def format_args(sql, parameters: dict):
         sql += " AND ".join([
@@ -108,6 +118,7 @@ class Database:
         ])
         return sql, tuple(parameters.values())
 
+    # imtihon natijalarini olish
     async def add_info_about_exam(self, viloyat_nomi, student_present, student_absent,
                                   student_removed, supervisor_present, supervisor_absent):
         sql = "INSERT INTO imtihon(viloyat_nomi, student_present, student_absent, student_removed, supervisor_present, supervisor_absent) \
@@ -133,12 +144,27 @@ class Database:
               "($1, $2, $3, $4)"
         return await self.execute(sql, viloyat_nomi, masul_shaxs, telefon_raqami, telegram_id, execute=True)
 
+    # yangi admin qo'shish
+    async def add_admin(self, admin_id: int, name: str):
+        sql = "INSERT INTO admins(admin_id, admin_name) VALUES ($1, $2)"
+        return await self.execute(sql, admin_id, name, execute=True)
+
+    # adminlar ro'yhatini olish
+    async def get_admin(self):
+        sql = "SELECT * FROM admins"
+        return await self.execute(sql, fetch=True)
+
+    # yangi foydalanuvchi qo'shish
     async def add_user(self, full_name, username, telegram_id):
         sql = "INSERT INTO users (full_name, username, telegram_id) VALUES($1, $2, $3) returning *"
         return await self.execute(sql, full_name, username, telegram_id, fetchrow=True)
 
     async def select_all_users(self):
         sql = "SELECT * FROM Users"
+        return await self.execute(sql, fetch=True)
+
+    async def selcet_user_id(self):
+        sql = "SELECT telegram_id FROM users"
         return await self.execute(sql, fetch=True)
 
     async def select_user(self, **kwargs):

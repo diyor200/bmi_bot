@@ -13,6 +13,7 @@ async def on_startup(dispatcher):
     await db.create_table_regions()
     await db.create_table_buildings()
     await db.create_table_exams()
+    await db.create_table_admins()
 
     # Birlamchi komandalar (/star va /help)
     await set_default_commands(dispatcher)

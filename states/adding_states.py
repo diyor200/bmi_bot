@@ -22,3 +22,7 @@ class AddExamInfos(StatesGroup):
     student_removed = State()
     supervisor_present = State()
     supervisor_absent = State()
+
+
+class DelAdmin(StatesGroup):
+    admin_id = State()

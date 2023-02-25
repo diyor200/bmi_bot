@@ -49,11 +49,18 @@ class Aquarium:
 
             threading.Event().wait(random.uniform(0.5, 2.0))
 
-
+import csv
 # aquarium = Aquarium()
 # aquarium.run()
-male_fish = [Fish('male') for _ in range(random.randint(1, 3))]
-female_fish = [Fish('female') for _ in range(random.randint(1, 3))]
-print(male_fish)
-print(female_fish)
-print(random.random())
+# male_fish = [Fish('male') for _ in range(random.randint(1, 3))]
+# female_fish = [Fish('female') for _ in range(random.randint(1, 3))]
+# print(male_fish)
+# print(female_fish)
+# print(random.random())
+l = "1211541928,1557560816".split(',')
+# print(l.split(','))
+k = []
+with open('test.csv', mode='r') as f:
+    writer = csv.reader(f)
+    header = next(writer)
+print(header)

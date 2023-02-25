@@ -8,8 +8,6 @@ from data.config import ADMINS
 
 @dp.message_handler(CommandStart())
 async def bot_start(message: types.Message):
-    test = await bot.get_chat(chat_id=827403258)
-    await message.answer(f"{test.get_mention(name=test.full_name, as_html=True)}")
     try:
         user = await db.add_user(telegram_id=message.from_user.id,
                                  full_name=message.from_user.full_name,

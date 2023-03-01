@@ -1,1 +1,1 @@
-
+from .inline_keyboards import viloyatlar_inline_keyboard

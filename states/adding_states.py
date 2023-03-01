@@ -1,6 +1,13 @@
 from aiogram.dispatcher.filters.state import StatesGroup, State
 
 
+class AddNewRegion(StatesGroup):
+    RegionName = State()
+    ResponsiblePerson = State()
+    PhoneNumber = State()
+
+
+
 class AddBinoState(StatesGroup):
     qaysi_viloyatda = State()
     bino_nomi = State()
@@ -17,6 +24,7 @@ class AddingAdmin(StatesGroup):
 
 class AddExamInfos(StatesGroup):
     viloyat = State()
+    bino_nomi = State()
     student_present = State()
     student_absent = State()
     student_removed = State()
@@ -26,3 +34,8 @@ class AddExamInfos(StatesGroup):
 
 class DelAdmin(StatesGroup):
     admin_id = State()
+
+
+class GetInfosExam(StatesGroup):
+    viloyat = State()
+    bino_nomi = State()

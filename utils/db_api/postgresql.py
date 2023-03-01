@@ -54,8 +54,7 @@ class Database:
         id SERIAL PRIMARY KEY,
         viloyat_nomi VARCHAR(50) UNIQUE NOT NULL,
         masul_shaxs VARCHAR(100) NULL,
-        telefon_raqami VARCHAR(15)NULL,
-        telegram_id VARCHAR(12) NULL
+        telefon_raqami VARCHAR(15)NULL
         );
         """
         await self.execute(sql, execute=True)
@@ -64,14 +63,14 @@ class Database:
         sql = """
         CREATE TABLE IF NOT EXISTS bino(
         id SERIAL PRIMARY KEY,
-        qaysi_viloyatda varchar(50), 
-        bino_nomi VARCHAR(255) NOT NULL,
+        qaysi_viloyatda integer not null, 
+        bino_nomi VARCHAR(255) NOT NULL UNIQUE,
         bino_manzili VARCHAR(255) NOT NULL,
         bino_sigimi VARCHAR(5) NOT NULL,
         masul_shaxs VARCHAR(100) NOT NULL,
         telefon_raqami VARCHAR(15) NOT NULL,
         telegram_id VARCHAR(12) NULL,
-        FOREIGN KEY (qaysi_viloyatda) REFERENCES viloyatlar(viloyat_nomi)
+        FOREIGN KEY (qaysi_viloyatda) REFERENCES viloyatlar(id)
         );
         """
         await self.execute(sql, execute=True)
@@ -89,26 +88,19 @@ class Database:
         sql = """
         CREATE TABLE IF NOT EXISTS imtihon(
         id SERIAL UNIQUE,
-        viloyat_nomi VARCHAR (50) NOT NULL,
-        student_present VARCHAR(10) NOT NULL,
-        student_absent VARCHAR(10) NULL,
-        student_removed VARCHAR(10) NULL,
-        supervisor_present VARCHAR(10) NOT NULL,
-        supervisor_absent VARCHAR(10) NOT NULL,
-        FOREIGN KEY (viloyat_nomi) REFERENCES viloyatlar(viloyat_nomi)
+        viloyat_id integer NOT NULL,
+        bino_id integer NOT NULL ,
+        student_present integer NOT NULL,
+        student_absent integer NULL,
+        student_removed integer NULL,
+        supervisor_present integer NOT NULL,
+        supervisor_absent integer NOT NULL,
+        FOREIGN KEY (viloyat_id) REFERENCES viloyatlar(id),
+        FOREIGN KEY (bino_id) REFERENCES bino(id)
         );
         """
         await self.execute(sql, execute=True)
 
-    async def create_table_admins(self):
-        sql = """
-        CREATE TABLE IF NOT EXISTS admins(
-            admin_id BIGINT not null unique,
-            admin_name varchar(200) not null,
-            FOREIGN KEY (admin_id) REFERENCES users(telegram_id)    
-        );
-        """
-        await self.execute(sql, execute=True)
 
     @staticmethod
     def format_args(sql, parameters: dict):
@@ -119,16 +111,30 @@ class Database:
         return sql, tuple(parameters.values())
 
     # imtihon natijalarini olish
-    async def add_info_about_exam(self, viloyat_nomi, student_present, student_absent,
+    async def add_info_about_exam(self, viloyat_nomi, bino_nomi, student_present, student_absent,
                                   student_removed, supervisor_present, supervisor_absent):
-        sql = "INSERT INTO imtihon(viloyat_nomi, student_present, student_absent, student_removed, supervisor_present, supervisor_absent) \
-               VALUES($1, $2, $3, $4, $5, $6);"
-        return await self.execute(sql, viloyat_nomi, student_present, student_absent, student_removed, supervisor_present,
-                           supervisor_absent, execute=True)
+        sql = "INSERT INTO imtihon(viloyat_id, bino_id, student_present, student_absent, student_removed, supervisor_present, supervisor_absent) \
+               VALUES($1, $2, $3, $4, $5, $6, $7);"
+        return await self.execute(sql, viloyat_nomi, bino_nomi, student_present, student_absent, student_removed,
+                                  supervisor_present,
+                                  supervisor_absent, execute=True)
 
-    async def get_info_about_exam(self):
-        sql = "SELECT * FROM imtihon"
-        return await self.execute(sql, fetch=True)
+    async def get_info_about_exam(self, viloyat_nomi, bino_nomi):
+        sql = """
+        SELECT viloyatlar.viloyat_nomi, bino.bino_nomi, imtihon.student_present, imtihon.student_absent, imtihon.student_removed,
+        imtihon.supervisor_present, imtihon.supervisor_absent
+        FROM imtihon
+        JOIN bino ON bino.id = imtihon.bino_id
+        JOIN viloyatlar ON viloyatlar.id = imtihon.id AND viloyatlar.id = bino.qaysi_viloyatda 
+        where viloyatlar.viloyat_nomi = $1 and bino.bino_nomi = $2;
+        """
+        return await self.execute(sql, viloyat_nomi, bino_nomi, fetch=True)
+
+    # Bino nomini viloyatlarga qarab oladi
+    async def get_bino_nomi_by_region(self, viloyat_nomi):
+        sql = "select bino.bino_nomi from bino " \
+              "join viloyatlar on viloyatlar.id = bino.qaysi_viloyatda where viloyatlar.viloyat_nomi=$1"
+        return await self.execute(sql, viloyat_nomi, fetch=True)
 
     # yangi bino qo'shish
     async def add_building(self, qaysi_viloyatda, bino_nomi, bino_manzili, bino_sigimi, masul_shaxs, telefon_raqami,
@@ -138,11 +144,32 @@ class Database:
         return await self.execute(sql, qaysi_viloyatda, bino_nomi, bino_manzili, bino_sigimi, masul_shaxs,
                                   telefon_raqami, telegram_id, execute=True)
 
+    # bino nomlarini olish
+    async def get_bino_nomi(self):
+        sql = "SELECT bino_nomi FROM bino"
+        return await self.execute(sql, fetch=True)
+
     # yangi viloyat qo'shish
-    async def add_region(self, viloyat_nomi, masul_shaxs, telefon_raqami, telegram_id):
-        sql = "INSERT INTO viloyatlar(viloyat_nomi, masul_shaxs, telefon_raqami, telegram_id) VALUES " \
-              "($1, $2, $3, $4)"
-        return await self.execute(sql, viloyat_nomi, masul_shaxs, telefon_raqami, telegram_id, execute=True)
+    async def add_region_name(self, viloyat_nomi, masul_shaxs, telefon_raqami):
+        sql = "INSERT INTO viloyatlar(viloyat_nomi, masul_shaxs, telefon_raqami) VALUES " \
+              "($1, $2, $3)"
+        return await self.execute(sql, viloyat_nomi, masul_shaxs, telefon_raqami, execute=True)
+
+    # viloyatlarni olish
+    async def get_viloyatlar_nomi(self):
+        sql = "select viloyat_nomi from viloyatlar"
+        return await self.execute(sql, fetch=True)
+
+    # viloyat idisini olish
+    async def get_region_id(self, viloyat_nomi):
+        sql = "select id from viloyatlar where viloyat_nomi= $1"
+        return await self.execute(sql, viloyat_nomi, fetchrow=True)
+
+    # Bino idisini olish
+    async def get_building_id(self, bino_nomi):
+        sql = "select id from bino where bino_nomi= $1"
+        return await self.execute(sql, bino_nomi, fetchrow=True)
+
 
     # yangi admin qo'shish
     async def add_admin(self, admin_id: int, name: str):

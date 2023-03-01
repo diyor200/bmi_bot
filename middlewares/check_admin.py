@@ -3,6 +3,7 @@ from aiogram.dispatcher.middlewares import BaseMiddleware
 from dotenv import get_key
 from data.config import BASE_DIR
 from aiogram.dispatcher.handler import CancelHandler
+from loader import db
 
 
 class AdminFilterMiddleware(BaseMiddleware):
@@ -20,3 +21,4 @@ class AdminFilterMiddleware(BaseMiddleware):
         admins = get_key(f"{BASE_DIR}/.env", 'ADMINS').split(',')
         if str(user_id) not in admins:
             raise CancelHandler()
+

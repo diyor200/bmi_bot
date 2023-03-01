@@ -11,7 +11,7 @@ env.read_env()
 BOT_TOKEN = env.str("BOT_TOKEN")  # Bot toekn
 ADMINS = env.list("ADMINS")  # adminlar ro'yxati
 # print(ADMINS)
-IP = env.str("ip")  # Xosting ip manzili
+IP = env.str("IP")  # Xosting ip manzili
 
 
 def add_admin_to_dotenv(value: str):

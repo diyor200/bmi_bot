@@ -1,10 +1,55 @@
 from aiogram.dispatcher import FSMContext
 from aiogram import types
 from keyboards.default.adding_keyboards import viloyatlar_keyboard
-from data.config import BASE_DIR, get_admins, add_admin_to_dotenv, remove_admin
+from data.config import get_admins, add_admin_to_dotenv, remove_admin
 from loader import dp, db, bot
-from states.adding_states import AddBinoState, AddingAdmin, AddExamInfos, DelAdmin
+from states.adding_states import AddBinoState, AddingAdmin, DelAdmin, AddNewRegion
 import pandas as pd
+
+
+# yangi viloyat qo'shish
+@dp.message_handler(commands=['new_region'])
+async def add_new_region(message: types.Message):
+    await message.answer('Viloyat nomi kiriting:')
+    await AddNewRegion.RegionName.set()
+
+
+@dp.message_handler(state=AddNewRegion.RegionName)
+async def region_name(message: types.Message, state: FSMContext):
+    viloyat_nomi = message.text
+    await state.update_data({
+        'viloyat_nomi': viloyat_nomi
+    })
+    await message.answer("Mas'ul shaxsni kiriting:")
+    await AddNewRegion.ResponsiblePerson.set()
+
+
+@dp.message_handler(state=AddNewRegion.ResponsiblePerson)
+async def responsible_person(message: types.Message, state: FSMContext):
+    person = message.text
+    await state.update_data({
+        'person': person
+    })
+    await message.answer("Telefon raqamini kiriting:")
+    await AddNewRegion.PhoneNumber.set()
+
+
+@dp.message_handler(state=AddNewRegion.PhoneNumber)
+async def phone_number(message: types.Message, state: FSMContext):
+    phone = message.text
+    await state.update_data({
+        'phone': phone
+    })
+    # getting data from state
+    data = await state.get_data()
+    viloyat_nomi = data.get('viloyat_nomi')
+    person = data.get('person')
+    phone = data.get('phone')
+    try:
+        await db.add_region_name(viloyat_nomi, person, phone)
+        await message.answer("Siz yangi viloyat qo'shdingiz!")
+    except:
+        await message.answer("Ma'lumotlarni kiritishda xatolik yuz berdi. Iltimos qaytadan urinib ko'ring!")
 
 
 @dp.message_handler(commands=['users'])
@@ -14,112 +59,10 @@ async def get_info_exam(message: types.Message):
     for i in range(len(infos)):
         username = infos[i][1]
         telegram_id = infos[i][3]
-        mentioned = await bot.get_chat(int(telegram_id))
         lists.append((username, telegram_id))
     df = pd.DataFrame(lists, columns=['username', 'telegram_id'])
+    df.index += 1
     await message.answer(text=str(df))
-
-
-@dp.message_handler(commands=['imtihon_malumotlari'])
-async def get_info_exam(message: types.Message):
-    infos = await db.get_info_about_exam()
-    text = ""
-    viloyat_nomi = infos[0][1]
-    student_present = infos[0][2]
-    student_absent = infos[0][3]
-    student_removed = infos[0][4]
-    supervisor_present = infos[0][5]
-    supervisor_absent = infos[0][6]
-    text += f"Viloyat:  <b>{viloyat_nomi}</b>\nQatnashgan talabalar: <b>{student_present}</b>\n" \
-            f"Qatnashmagan talabalar soni: <b>{student_absent}</b>\nChetlatilgan talabar soni: <b>{student_removed}</b>\n" \
-            f"Nazoratchilar soni: <b>{supervisor_present}</b>\n Qatnashmagan nazoratchilar soni: <b>{supervisor_absent}</b>"
-    await message.answer(text=text)
-
-
-@dp.message_handler(commands=['add_info_exam'])
-async def add_info_exam(message: types.Message):
-    await message.answer("Viloyatni kiriting", reply_markup=viloyatlar_keyboard())
-    await AddExamInfos.viloyat.set()
-
-
-@dp.message_handler(state=AddExamInfos.viloyat)
-async def add_info_exam(message: types.Message, state: FSMContext):
-    viloyat_nomi = message.text
-    await state.update_data({
-        'viloyat_nomi': viloyat_nomi
-    })
-    await message.answer("Nechta talaba keldi:", reply_markup=types.ReplyKeyboardRemove())
-    await AddExamInfos.student_present.set()
-
-
-@dp.message_handler(state=AddExamInfos.student_present)
-async def add_info_exam(message: types.Message, state: FSMContext):
-    student_present = message.text
-    await state.update_data({
-        'student_present': student_present
-    })
-    await message.answer("Nechta talaba kelmadi: ")
-    await AddExamInfos.student_absent.set()
-
-
-@dp.message_handler(state=AddExamInfos.student_absent)
-async def add_info_exam(message: types.Message, state: FSMContext):
-    student_absent = message.text
-    await state.update_data({
-        'student_absent': student_absent
-    })
-    await message.answer("Nechta talaba chetlashtirildi: ")
-    await AddExamInfos.student_removed.set()
-
-
-@dp.message_handler(state=AddExamInfos.student_removed)
-async def add_info_exam(message: types.Message, state: FSMContext):
-    student_removed = message.text
-    await state.update_data({
-        'student_removed': student_removed
-    })
-    await message.answer("Nechta nazoratchi qatnashdi?")
-    await AddExamInfos.supervisor_present.set()
-
-
-@dp.message_handler(state=AddExamInfos.supervisor_present)
-async def add_info_exam(message: types.Message, state: FSMContext):
-    supervisor_present = message.text
-    await state.update_data({
-        'supervisor_present': supervisor_present
-    })
-    await message.answer("Nechta nazoratchi qatnashmadi")
-    await AddExamInfos.supervisor_absent.set()
-
-
-@dp.message_handler(state=AddExamInfos.supervisor_absent)
-async def add_info_exam(message: types.Message, state: FSMContext):
-    supervisor_absent = message.text
-    await state.update_data({
-        'supervisor_absent': supervisor_absent
-    })
-    # Getting data from update
-    data = await state.get_data()
-    viloyat_nomi = data.get('viloyat_nomi')
-    student_present = data.get('student_present')
-    student_absent = data.get('student_absent')
-    student_removed = data.get("student_removed")
-    supervisor_present = data.get('supervisor_present')
-    supervisor_absent = data.get('supervisor_absent')
-
-    try:
-        await db.add_info_about_exam(
-            viloyat_nomi=viloyat_nomi,
-            student_present=student_present,
-            student_absent=student_absent,
-            student_removed=student_removed,
-            supervisor_present=supervisor_present,
-            supervisor_absent=supervisor_absent
-        )
-        await message.answer('Muvaffaqiyatli kiritildi!')
-    except:
-        await message.answer("Ma'lumotlarni kiritishda xatolik yuz berdi!")
-    await state.finish()
 
 
 @dp.message_handler(commands=['add_admin'])
@@ -130,31 +73,32 @@ async def add_admin(message: types.Message):
 
 @dp.message_handler(state=AddingAdmin.admin_id)
 async def handle_admin_id(message: types.Message, state: FSMContext):
-    admin_id = message.from_user.id
+    admin_id = message.text
     if admin_id in get_admins():
         await message.answer("Allaqachon kiritilgan!")
     else:
-        if admin_id.isdigit() and len(admin_id) == 10:
+        if admin_id.isdigit():
             add_admin_to_dotenv(str(admin_id))
             await message.answer("Admin muvaffaqiyatli qo'shildi!")
         else:
             await message.answer("Noto'g'ri id kiritildi!")
     await state.finish()
 
-
+# yangi bino qo'shish
 @dp.message_handler(commands=["yangi_bino"])
-async def add_region(message: types.Message, state: FSMContext):
-    await message.answer("Viloyatni tanlang: ", reply_markup=viloyatlar_keyboard())
+async def add_region(message: types.Message):
+    await message.answer("Viloyatni tanlang: ", reply_markup=await viloyatlar_keyboard())
     await AddBinoState.qaysi_viloyatda.set()
 
 
 @dp.message_handler(state=AddBinoState.qaysi_viloyatda)
 async def add_region(message: types.Message, state: FSMContext):
     qaysi_viloyatda = message.text
+    viloyat_id = await db.get_region_id(qaysi_viloyatda)
     await message.answer("Bino nomini kiriting: ", reply_markup=types.ReplyKeyboardRemove())
     await AddBinoState.bino_nomi.set()
     await state.update_data({
-        "qaysi_viloyatda": qaysi_viloyatda
+        "qaysi_viloyatda": viloyat_id[0]
     })
 
 
@@ -213,25 +157,25 @@ async def add_region(message: types.Message, state: FSMContext):
     telefon_raqami = data.get("telefon_raqami")
 
     try:
-        await db.add_building(qaysi_viloyatda, bino_nomi, bino_manzili,
+        await db.add_building(int(qaysi_viloyatda), bino_nomi, bino_manzili,
                               bino_sigimi, masul_shaxs, telefon_raqami, "")
 
         await message.answer("Siz yangi bino qo'shdingiz!")
     except:
         await message.answer("Viloyat nomi noto'gri kiritilgan. "
                              "Iltimos, nomlarni kiritishda tugmalardan foydalaning.",
-                             reply_markup=viloyatlar_keyboard())
+                             reply_markup=await viloyatlar_keyboard())
 
-        @dp.message_handler(lambda message: True)
-        async def region(message: types.Message):
-            qaysi_viloyatda = message.text
-            try:
-                await db.add_building(qaysi_viloyatda, bino_nomi, bino_manzili,
-                                      bino_sigimi, masul_shaxs, "", "")
-                await message.answer("qo'shildi", reply_markup=types.ReplyKeyboardRemove())
-                await state.finish()
-            except:
-                await message.answer("Yana notogri kiritingiz", reply_markup=viloyatlar_keyboard())
+        # @dp.message_handler()
+        # async def region(message: types.Message):
+        #     qaysi_viloyatda = message.text
+        #     try:
+        #         await db.add_building(qaysi_viloyatda, bino_nomi, bino_manzili,
+        #                               bino_sigimi, masul_shaxs, "", "")
+        #         await message.answer("qo'shildi", reply_markup=types.ReplyKeyboardRemove())
+        #         await state.finish()
+        #     except:
+        #         await message.answer("Yana notogri kiritingiz", reply_markup=viloyatlar_keyboard())
     await state.finish()
 
 
@@ -258,7 +202,7 @@ async def del_admin(message: types.Message):
 
 @dp.message_handler(state=DelAdmin.admin_id)
 async def delete_admin(message: types.Message, state: FSMContext):
-    admin_id = str(message.from_user.id)
+    admin_id = message.text
     admins = get_admins()
     if admin_id in admins:
         remove_admin(admin_id)

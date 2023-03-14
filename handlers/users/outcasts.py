@@ -110,9 +110,9 @@ async def outcasts_infos(message: types.Message, state: FSMContext):
 
 @dp.callback_query_handler()
 async def callback_handle(call: types.CallbackQuery):
-    print(call.data)
+    # print(call.data)
     call_list = call.data.split(',')
-    print(len(call_list))
+    # print(len(call_list))
     text = ""
     if len(call_list) == 2:
         viloyat_id = int(call_list[0])
@@ -133,7 +133,7 @@ async def callback_handle(call: types.CallbackQuery):
         else:
             for num, i in enumerate(info, start=1):
                 text += f"{num}. {i[0]}\n" + f"{i[1]}\n" + f"{i[2]}\n" + f"{i[3]}\n\n"
-    print(info)
+    # print(info)
 
     await call.answer(text=text, show_alert=True)
     # await call.message.answer(reply_markup=)

@@ -95,7 +95,7 @@ async def add_info_exam(message: types.Message):
 async def add_info_exam(message: types.Message, state: FSMContext):
     viloyat_nomi = message.text
     viloyat_id = await db.get_region_id(viloyat_nomi)
-    print(viloyat_id)
+    # print(viloyat_id)
     await state.update_data({
         'viloyat_nomi': viloyat_id[0]
     })

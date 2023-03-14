@@ -7,6 +7,12 @@ class AddNewRegion(StatesGroup):
     PhoneNumber = State()
 
 
+class AddOutcasts(StatesGroup):
+    viloyat = State()
+    bino = State()
+    ismi = State()
+    sababi = State()
+
 
 class AddBinoState(StatesGroup):
     qaysi_viloyatda = State()
@@ -27,7 +33,6 @@ class AddExamInfos(StatesGroup):
     bino_nomi = State()
     student_present = State()
     student_absent = State()
-    student_removed = State()
     supervisor_present = State()
     supervisor_absent = State()
 
@@ -39,3 +44,12 @@ class DelAdmin(StatesGroup):
 class GetInfosExam(StatesGroup):
     viloyat = State()
     bino_nomi = State()
+
+
+class GetInfosExamByRegion(StatesGroup):
+    viloyat = State()
+
+
+class OutcastsState(StatesGroup):
+    viloyat = State()
+    bino = State()

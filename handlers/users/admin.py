@@ -4,7 +4,6 @@ from keyboards.default.adding_keyboards import viloyatlar_keyboard
 from data.config import get_admins, add_admin_to_dotenv, remove_admin
 from loader import dp, db, bot
 from states.adding_states import AddBinoState, AddingAdmin, DelAdmin, AddNewRegion
-import pandas as pd
 
 
 # yangi viloyat qo'shish
@@ -50,20 +49,7 @@ async def phone_number(message: types.Message, state: FSMContext):
         await message.answer("Siz yangi viloyat qo'shdingiz!")
     except:
         await message.answer("Ma'lumotlarni kiritishda xatolik yuz berdi. Iltimos qaytadan urinib ko'ring!")
-
-
-@dp.message_handler(commands=['users'])
-async def get_info_exam(message: types.Message):
-    infos = await db.select_all_users()
-    lists = []
-    for i in range(len(infos)):
-        username = infos[i][1]
-        telegram_id = infos[i][3]
-        lists.append((username, telegram_id))
-    df = pd.DataFrame(lists, columns=['username', 'telegram_id'])
-    df.index += 1
-    await message.answer(text=str(df))
-
+    await state.finish()
 
 @dp.message_handler(commands=['add_admin'])
 async def add_admin(message: types.Message):
@@ -84,7 +70,8 @@ async def handle_admin_id(message: types.Message, state: FSMContext):
             await message.answer("Noto'g'ri id kiritildi!")
     await state.finish()
 
-# yangi bino qo'shish
+
+# /no qo'shish
 @dp.message_handler(commands=["yangi_bino"])
 async def add_region(message: types.Message):
     await message.answer("Viloyatni tanlang: ", reply_markup=await viloyatlar_keyboard())
@@ -158,24 +145,11 @@ async def add_region(message: types.Message, state: FSMContext):
 
     try:
         await db.add_building(int(qaysi_viloyatda), bino_nomi, bino_manzili,
-                              bino_sigimi, masul_shaxs, telefon_raqami, "")
+                              int(bino_sigimi), masul_shaxs, telefon_raqami)
 
         await message.answer("Siz yangi bino qo'shdingiz!")
     except:
-        await message.answer("Viloyat nomi noto'gri kiritilgan. "
-                             "Iltimos, nomlarni kiritishda tugmalardan foydalaning.",
-                             reply_markup=await viloyatlar_keyboard())
-
-        # @dp.message_handler()
-        # async def region(message: types.Message):
-        #     qaysi_viloyatda = message.text
-        #     try:
-        #         await db.add_building(qaysi_viloyatda, bino_nomi, bino_manzili,
-        #                               bino_sigimi, masul_shaxs, "", "")
-        #         await message.answer("qo'shildi", reply_markup=types.ReplyKeyboardRemove())
-        #         await state.finish()
-        #     except:
-        #         await message.answer("Yana notogri kiritingiz", reply_markup=viloyatlar_keyboard())
+        await message.answer("Ma'lumotlarni kiritishda xatolik yuz berdi!")
     await state.finish()
 
 

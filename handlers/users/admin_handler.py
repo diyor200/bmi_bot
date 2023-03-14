@@ -1,11 +1,43 @@
 from aiogram.dispatcher import FSMContext
 from aiogram import types
 from keyboards.default.adding_keyboards import viloyatlar_keyboard, get_bino_keyboard
-from loader import dp, db, bot
-from states.adding_states import GetInfosExam, AddExamInfos
+from keyboards.inline.inline_keyboards import reason_markup
+from loader import dp, db
+from states.adding_states import GetInfosExam, AddExamInfos, GetInfosExamByRegion
 
 
 @dp.message_handler(commands=['imtihon_malumotlari'])
+async def get_info_exam(message: types.Message):
+    text = "Viloyatni tanlang:"
+    await message.answer(text, reply_markup=await viloyatlar_keyboard())
+    await GetInfosExamByRegion.viloyat.set()
+
+
+@dp.message_handler(state=GetInfosExamByRegion.viloyat)
+async def get_all_infos_by_region(message: types.Message, state: FSMContext):
+    await message.answer("Ma'lumotlar olinmoqda...", reply_markup=types.ReplyKeyboardRemove())
+    viloyat_id = await db.get_region_id(message.text)
+    try:
+        infos = await db.get_info_about_exam_by_region(viloyat_id[0])
+        viloyat_nomi = infos[0]
+        if infos[1] is not None:
+            student_present = infos[1]
+            student_absent = infos[2]
+            student_removed = infos[3]
+            supervisor_present = infos[4]
+            supervisor_absent = infos[5]
+            text = f"Viloyat:  <b><u>{viloyat_nomi}</u></b>\nQatnashgan talabalar:  <b><u>{student_present}</u></b>\n" \
+                   f"Qatnashmagan talabalar soni:  <b><u>{student_absent}</u></b>\nChetlatilgan talabar soni:  <b><u>{student_removed}</u></b>\n" \
+                   f"Nazoratchilar soni:  <b><u>{supervisor_present}</u></b>\nQatnashmagan nazoratchilar soni:  <b><u>{supervisor_absent}</u></b>"
+            await message.answer(text, reply_markup=reason_markup(viloyat_id[0]))
+        else:
+            await message.answer("Ma'lumotlar kiritilmagan!\nKiritish uchun: /add_info_exam", reply_markup=types.ReplyKeyboardRemove())
+    except:
+        await message.answer("Ma'lumotlarni kiritishda xatolik yuz berdi..")
+    await state.finish()
+
+
+@dp.message_handler(commands=['imtihon_malumotlari_viloyat_boyicha'])
 async def get_info_exam(message: types.Message):
     text = "Viloyatni tanlang:"
     await message.answer(text, reply_markup=await viloyatlar_keyboard())
@@ -15,8 +47,9 @@ async def get_info_exam(message: types.Message):
 @dp.message_handler(state=GetInfosExam.viloyat)
 async def get_info_exam(message: types.Message, state: FSMContext):
     viloyat = message.text
+    viloyat_id = await db.get_region_id(viloyat)
     await state.update_data({
-        "viloyat_nomi": viloyat
+        "viloyat_id": viloyat_id[0]
     })
     await message.answer("Binoni kiriting: ", reply_markup=await get_bino_keyboard(viloyat))
     await GetInfosExam.bino_nomi.set()
@@ -24,27 +57,31 @@ async def get_info_exam(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=GetInfosExam.bino_nomi)
 async def get_bino(message: types.Message, state: FSMContext):
+    await message.answer("Ma'lumotlar olinmoqda...", reply_markup=types.ReplyKeyboardRemove())
     bino_nomi = message.text
-    await state.update_data({
-        'bino_nomi': bino_nomi
-    })
+    # await state.update_data({
+    #     'bino_nomi': bino_nomi
+    # })
     data = await state.get_data()
-    viloyat_nomi = data.get('viloyat_nomi')
-    bino_nomi = data.get('bino_nomi')
-    infos = await db.get_info_about_exam(viloyat_nomi, bino_nomi)
-    for i in infos:
-        viloyat_nomi = i[0]
-        bino_nomi = i[1]
-        student_present = i[2]
-        student_absent = i[3]
-        student_removed = i[4]
-        supervisor_present = i[5]
-        supervisor_absent = i[6]
+    viloyat_id = data.get('viloyat_id')
+    bino_id = await db.get_building_id(bino_nomi)
+    try:
+        infos = await db.get_info_about_exam(viloyat_id, bino_id[0])
+        # for i in infos:
+        viloyat_nomi = infos[0]
+        bino_nomi = infos[1]
+        student_present = infos[2]
+        student_absent = infos[3]
+        student_removed = infos[4]
+        supervisor_present = infos[5]
+        supervisor_absent = infos[6]
         text = ""
         text += f"Viloyat:  <b><u>{viloyat_nomi}</u></b>\nBino nomi:  <b><u>{bino_nomi}</u></b>\nQatnashgan talabalar:  <b><u>{student_present}</u></b>\n" \
                 f"Qatnashmagan talabalar soni:  <b><u>{student_absent}</u></b>\nChetlatilgan talabar soni:  <b><u>{student_removed}</u></b>\n" \
                 f"Nazoratchilar soni:  <b><u>{supervisor_present}</u></b>\nQatnashmagan nazoratchilar soni:  <b><u>{supervisor_absent}</u></b>"
-        await message.answer(text=text, reply_markup=types.ReplyKeyboardRemove())
+        await message.answer(text=text, reply_markup=reason_markup(viloyat_id, bino_id[0]))
+    except:
+        await message.answer('Imtihon ma\'lumotlari kiritilmagan!\nKiritish uchun: /add_info_exam', reply_markup=types.ReplyKeyboardRemove())
     await state.finish()
 
 
@@ -70,7 +107,6 @@ async def add_info_exam(message: types.Message, state: FSMContext):
 async def add_info_exam(message: types.Message, state: FSMContext):
     bino_nomi = message.text
     bino_id = await db.get_building_id(bino_nomi)
-    print(bino_id)
     await state.update_data({
         'bino_nomi': bino_id[0]
     })
@@ -93,16 +129,6 @@ async def add_info_exam(message: types.Message, state: FSMContext):
     student_absent = message.text
     await state.update_data({
         'student_absent': student_absent
-    })
-    await message.answer("Nechta talaba chetlashtirildi: ")
-    await AddExamInfos.student_removed.set()
-
-
-@dp.message_handler(state=AddExamInfos.student_removed)
-async def add_info_exam(message: types.Message, state: FSMContext):
-    student_removed = message.text
-    await state.update_data({
-        'student_removed': student_removed
     })
     await message.answer("Nechta nazoratchi qatnashdi?")
     await AddExamInfos.supervisor_present.set()
@@ -130,7 +156,6 @@ async def add_info_exam(message: types.Message, state: FSMContext):
     bino_nomi = data.get('bino_nomi')
     student_present = data.get('student_present')
     student_absent = data.get('student_absent')
-    student_removed = data.get("student_removed")
     supervisor_present = data.get('supervisor_present')
     supervisor_absent = data.get('supervisor_absent')
     try:
@@ -139,7 +164,6 @@ async def add_info_exam(message: types.Message, state: FSMContext):
             bino_nomi=int(bino_nomi),
             student_present=int(student_present),
             student_absent=int(student_absent),
-            student_removed=int(student_removed),
             supervisor_present=int(supervisor_present),
             supervisor_absent=int(supervisor_absent)
         )

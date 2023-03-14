@@ -7,8 +7,6 @@ async def viloyatlar_keyboard():
     markup = ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     for i in regions:
         markup.insert(KeyboardButton(text=i[0]))
-    if len(regions) < 13:
-        markup.insert(KeyboardButton(text="+"))
     return markup
 
 

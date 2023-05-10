@@ -17,8 +17,10 @@ async def get_info_exam(message: types.Message):
 async def get_all_infos_by_region(message: types.Message, state: FSMContext):
     await message.answer("Ma'lumotlar olinmoqda...", reply_markup=types.ReplyKeyboardRemove())
     viloyat_id = await db.get_region_id(message.text)
+    print(viloyat_id)
     try:
         infos = await db.get_info_about_exam_by_region(viloyat_id[0])
+        print(infos)
         viloyat_nomi = infos[0]
         if infos[1] is not None:
             student_present = infos[1]
@@ -51,8 +53,13 @@ async def get_info_exam(message: types.Message, state: FSMContext):
     await state.update_data({
         "viloyat_id": viloyat_id[0]
     })
-    await message.answer("Binoni kiriting: ", reply_markup=await get_bino_keyboard(viloyat))
-    await GetInfosExam.bino_nomi.set()
+    markup = await get_bino_keyboard(viloyat)
+    if markup == None:
+        await message.answer("Bino mavjud emas!\nKiritish uchun: /yangi_bino", reply_markup=types.ReplyKeyboardRemove())
+        await state.finish()
+    else:
+        await message.answer("Binoni kiriting: ", reply_markup=markup)
+        await GetInfosExam.bino_nomi.set()
 
 
 @dp.message_handler(state=GetInfosExam.bino_nomi)
@@ -99,8 +106,13 @@ async def add_info_exam(message: types.Message, state: FSMContext):
     await state.update_data({
         'viloyat_nomi': viloyat_id[0]
     })
-    await message.answer("Bino nomini kiriting:", reply_markup=await get_bino_keyboard(viloyat_nomi))
-    await AddExamInfos.bino_nomi.set()
+    markup = await get_bino_keyboard(viloyat_nomi)
+    if markup == None:
+        await message.answer("Bino mavjud emas!\nKiritish uchun: /yangi_bino", reply_markup=types.ReplyKeyboardRemove())
+        await state.finish()
+    else:
+        await message.answer("Bino nomini kiriting:", reply_markup=markup)
+        await AddExamInfos.bino_nomi.set()
 
 
 @dp.message_handler(state=AddExamInfos.bino_nomi)

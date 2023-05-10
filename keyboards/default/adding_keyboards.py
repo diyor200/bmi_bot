@@ -12,6 +12,13 @@ async def viloyatlar_keyboard():
 
 async def get_bino_keyboard(viloyat_nomi):
     markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
-    for i in await db.get_bino_nomi_by_region(viloyat_nomi):
-        markup.insert(KeyboardButton(text=f"{i[0]}"))
+    bino_nomi = await db.get_bino_nomi_by_region(viloyat_nomi)
+    print(f"bino: {bino_nomi}")
+    if bino_nomi != []:
+        for i in bino_nomi:
+            markup.insert(KeyboardButton(text=f"{i[0]}"))
+        print("Bino borakan")
+    else:
+        print("Bino yogakan")
+        return None
     return markup

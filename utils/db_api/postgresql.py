@@ -11,11 +11,13 @@ class Database:
         self.pool: Union[Pool, None] = None
 
     async def create(self):
+        db_url = config.DATABASE_URL
         self.pool = await asyncpg.create_pool(
-            user=config.DB_USER,
-            password=config.DB_PASS,
-            host=config.DB_HOST,
-            database=config.DB_NAME
+            db_url
+            # user=config.DB_USER,
+            # password=config.DB_PASS,
+            # host=config.DB_HOST,
+            # database=config.DB_NAME
         )
 
     async def execute(self, command, *args,
@@ -154,7 +156,7 @@ class Database:
         #        VALUES($1, $2, $3, $4, $5, $6);"
         sql = """
         insert into imtihon(viloyat_id, bino_id, student_present, student_absent, student_removed, supervisor_present, supervisor_absent)
-        values ($1, $2, $3, $4, (select count(id) from outcasts), $5, $6)
+        values ($1, $2, $3, $4, (select count(id) from outcasts), $5, $6)                                   
         on conflict (bino_id) do update
         set student_present = Excluded.student_present,
         student_absent = excluded.student_absent,
@@ -173,14 +175,14 @@ class Database:
         JOIN bino ON bino.id = imtihon.bino_id
         JOIN viloyatlar ON viloyatlar.id = imtihon.id AND viloyatlar.id = bino.qaysi_viloyatda 
         where viloyatlar.id = $1 and bino.id = $2;
-        """
+        """ 
         return await self.execute(sql, viloyat_id, bino_id, fetchrow=True)
 
     async def get_info_about_exam_by_region(self, viloyat_id):
         sql = """
         select (select viloyat_nomi from viloyatlar where viloyatlar.id=$1) as viloyat_nomi, sum(student_present) as keldi, sum(student_absent) as kelmadi,
         sum(student_removed) as chetlatildi, sum(supervisor_present) as s_keldi, sum(supervisor_absent) as s_kelmadi
-        from imtihon where viloyat_id = 1
+        from imtihon where viloyat_id = $1
         """
         return await self.execute(sql, viloyat_id, fetchrow=True)
 

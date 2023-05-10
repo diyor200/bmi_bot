@@ -19,8 +19,13 @@ async def add_outcasts(message: types.Message, state: FSMContext):
     await state.update_data({
         "viloyat_id": viloyat_id[0]
     })
-    await message.answer("Binoni kiriting:", reply_markup=await get_bino_keyboard(message.text))
-    await AddOutcasts.bino.set()
+    markup = await get_bino_keyboard(message.text)
+    if markup == None:
+        await message.answer("Bino mavjud emas!\nKiritish uchun: /yangi_bino", reply_markup=types.ReplyKeyboardRemove())
+        await state.finish()
+    else:
+        await message.answer("Binoni kiriting:", reply_markup=markup)
+        await AddOutcasts.bino.set()
 
 
 @dp.message_handler(state=AddOutcasts.bino)
@@ -75,7 +80,14 @@ async def outcasts_info(message: types.Message, state: FSMContext):
             'viloyat_nomi': viloyat
         })
         await OutcastsState.bino.set()
-        await message.answer("Binoni kiriting", reply_markup=await get_bino_keyboard(viloyat))
+        markup = await get_bino_keyboard(viloyat)
+        print(type(markup))
+        print(markup)
+        if markup == None:
+            await message.answer("Bino mavjud emas!\nKiritish uchun: /yangi_bino", reply_markup=types.ReplyKeyboardRemove())
+            await state.finish()
+        else:
+            await message.answer("Binoni kiriting", reply_markup=markup)
     except:
         await message.answer("Viloyat nomi noto'g'ri kiritildi. Iltimos tugmalardan foydalaning")
         await state.finish()

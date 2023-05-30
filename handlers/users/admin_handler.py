@@ -6,11 +6,15 @@ from loader import dp, db
 from states.adding_states import GetInfosExam, AddExamInfos, GetInfosExamByRegion
 
 
-@dp.message_handler(commands=['imtihon_malumotlari'])
+@dp.message_handler(commands=['exam_info'])
 async def get_info_exam(message: types.Message):
     text = "Viloyatni tanlang:"
-    await message.answer(text, reply_markup=await viloyatlar_keyboard())
-    await GetInfosExamByRegion.viloyat.set()
+    markup = await viloyatlar_keyboard()
+    if markup != []:
+        await message.answer(text, reply_markup=markup)
+        await GetInfosExamByRegion.viloyat.set()
+    else:
+        await message.answer("Bunday viloyat mavjud emas!\nQo'shish uchun: /new_region")
 
 
 @dp.message_handler(state=GetInfosExamByRegion.viloyat)
@@ -39,11 +43,15 @@ async def get_all_infos_by_region(message: types.Message, state: FSMContext):
     await state.finish()
 
 
-@dp.message_handler(commands=['imtihon_malumotlari_viloyat_boyicha'])
+@dp.message_handler(commands=['exam_info_by_building'])
 async def get_info_exam(message: types.Message):
     text = "Viloyatni tanlang:"
-    await message.answer(text, reply_markup=await viloyatlar_keyboard())
-    await GetInfosExam.viloyat.set()
+    markup = await viloyatlar_keyboard()
+    if markup != None:
+        await message.answer(text, reply_markup=markup)
+        await GetInfosExam.viloyat.set()
+    else:
+        await message.answer("Bunday viloyat mavjud emas!\nQo'shish uchun: /new_building")
 
 
 @dp.message_handler(state=GetInfosExam.viloyat)
@@ -55,7 +63,7 @@ async def get_info_exam(message: types.Message, state: FSMContext):
     })
     markup = await get_bino_keyboard(viloyat)
     if markup == None:
-        await message.answer("Bino mavjud emas!\nKiritish uchun: /yangi_bino", reply_markup=types.ReplyKeyboardRemove())
+        await message.answer("Bino mavjud emas!\nKiritish uchun: /new_building", reply_markup=types.ReplyKeyboardRemove())
         await state.finish()
     else:
         await message.answer("Binoni kiriting: ", reply_markup=markup)
@@ -108,7 +116,7 @@ async def add_info_exam(message: types.Message, state: FSMContext):
     })
     markup = await get_bino_keyboard(viloyat_nomi)
     if markup == None:
-        await message.answer("Bino mavjud emas!\nKiritish uchun: /yangi_bino", reply_markup=types.ReplyKeyboardRemove())
+        await message.answer("Bino mavjud emas!\nKiritish uchun: /new_building", reply_markup=types.ReplyKeyboardRemove())
         await state.finish()
     else:
         await message.answer("Bino nomini kiriting:", reply_markup=markup)

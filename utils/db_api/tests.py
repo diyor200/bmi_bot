@@ -91,6 +91,19 @@ async def test():
     # df = pd.DataFrame(lists, columns=['id', 'viloyat_nomi', 'student_keldi', 'student_kelmadi',
     #                                   'student_chetlatildi', 'nazoratchi_keldi', 'nazoratchi_kelmadi'])
     # print(df)
+    # nomi = "Ferghana"
+    # person = "aliyev"
+    # number = "324"
+    # try:
+    #     await db.add_region_name(nomi, person, number)
+    #     print("ok")
+    # except:
+    #     print("bad")
 
-
+    result = ""
+    outcasts = await db.get_all_outcasts_by_building(3, 1)
+    print(outcasts)
+    for i in outcasts:
+        result += f"{i[0]}. {i[3]}\n"
+    print(result)
 asyncio.run(test())

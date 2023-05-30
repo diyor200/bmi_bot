@@ -1,13 +1,15 @@
+import logging
+
 from aiogram.dispatcher import FSMContext
 from aiogram import types
 from keyboards.default.adding_keyboards import viloyatlar_keyboard, get_bino_keyboard
 from keyboards.inline.inline_keyboards import reason_markup
 from loader import dp, db
-from states.adding_states import AddOutcasts, OutcastsState
+from states.adding_states import AddOutcasts, OutcastsState, EditOutcastState
 
 
 # chetlatilganlarni bazaga qo'shish
-@dp.message_handler(commands=['chetalildi'])
+@dp.message_handler(commands=['chetlatildi'])
 async def add_region_id(message: types.Message):
     await message.answer("Viloyatni tanlang:", reply_markup=await viloyatlar_keyboard())
     await AddOutcasts.viloyat.set()
@@ -84,12 +86,12 @@ async def outcasts_info(message: types.Message, state: FSMContext):
         print(type(markup))
         print(markup)
         if markup == None:
-            await message.answer("Bino mavjud emas!\nKiritish uchun: /yangi_bino", reply_markup=types.ReplyKeyboardRemove())
+            await message.answer("Bino mavjud emas!\nKiritish uchun: /new_building", reply_markup=types.ReplyKeyboardRemove())
             await state.finish()
         else:
             await message.answer("Binoni kiriting", reply_markup=markup)
     except:
-        await message.answer("Viloyat nomi noto'g'ri kiritildi. Iltimos tugmalardan foydalaning")
+        await message.answer("Viloyat nomi noto'g'ri kiritildi. Iltimos tugmalardan foydalaning.")
         await state.finish()
 
 
@@ -149,3 +151,93 @@ async def callback_handle(call: types.CallbackQuery):
 
     await call.answer(text=text, show_alert=True)
     # await call.message.answer(reply_markup=)
+
+
+@dp.message_handler(commands=['edit_outcast'])
+async def edit_outcast(message: types.Message, state: FSMContext):
+    markup = await viloyatlar_keyboard()
+    if markup != []:
+        await message.answer('Viloyatni tanlang:', reply_markup=markup)
+        await EditOutcastState.viloyat.set()
+    else:
+        await message.answer("Bunday viloyat mavjud emas!\nQo'shish uchun: /new_region")
+
+
+async def get_outcasts(viloyat_id, bino_id):
+    result = ""
+    outcasts = await db.get_all_outcasts_by_building(viloyat_id, bino_id)
+    if outcasts != []:
+        for i in outcasts:
+            result += f"{i[0]}. {i[3]}\n"
+        return result
+    return False
+
+
+@dp.message_handler(state=EditOutcastState.viloyat)
+async def get_region(message: types.Message, state: FSMContext):
+    viloyat_nomi = message.text
+    try:
+        viloyat_id = await db.get_region_id(viloyat_nomi)
+        markup = await get_bino_keyboard(viloyat_nomi)
+        print(markup)
+        if markup is not None:
+            await state.update_data({'viloyat_id': viloyat_id})
+            await message.answer('Binoni kiriting:', reply_markup=markup)
+            await EditOutcastState.bino.set()
+        else:
+            await message.answer('Bino kiritilmagan. Kiritish uchun: /new_building')
+            await state.finish()
+    except:
+        await message.answer("Bunday Viloyat mavjud emas")
+        await state.finish()
+
+
+@dp.message_handler(state=EditOutcastState.bino)
+async def get_building(message: types.Message, state: FSMContext):
+    bino = message.text
+    try:
+        bino_id = await db.get_building_id(bino)
+        print(bino_id[1])
+        data = await state.get_data()
+        viloyat_id = data.get('viloyat_id')
+        print(viloyat_id)
+        text = await get_outcasts(viloyat_id, bino_id)
+        print(text)
+        await message.answer(f"{text}Raqamini kiriting:")
+        await state.update_data({'bino_id': bino_id})
+        await EditOutcastState.id.set()
+    except:
+        await message.answer('Bunday bino mavjud emas! Qo\'shish uchun: /new_building')
+        await state.finish()
+
+
+@dp.message_handler(state=EditOutcastState.viloyat)
+async def get_id(message: types.Message, state: FSMContext):
+    id = int(message.text)
+    if id:
+        await state.update_data({'id': id})
+        data = await state.get_data()
+        vid = data.get('viloyat_id')
+        bid = data.get('bino_id')
+        reason = await db.get_outcast_reason(vid, bid, id)
+        if reason != []:
+            await message.answer(f'Eski sababi: <i>{reason[1]}</i>.\nYangi sababini kiriting:')
+            await EditOutcastState.reason.set()
+    else:
+        await message.answer("Id ni noto'g'ri kiritdingiz!")
+        await state.finish()
+
+
+@dp.message_handler(state=EditOutcastState.viloyat)
+async def edit_outcast(message: types.Message, state: FSMContext):
+    reason = message.text
+    data = await state.get_data()
+    vid = data.get('viloyat_id')
+    bid = data.get('bino_id')
+    id = data.get('id')
+    try:
+        await db.edit_outcast_reason(vid, bid, id, reason)
+        await message.answer("Muvaffaqiyatli o'zgartirildi!")
+    except:
+        await message.answer("Ma'lumotlarni kiritishda xatolik yuz berdi...")
+    await state.finish()

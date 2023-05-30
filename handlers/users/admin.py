@@ -72,7 +72,7 @@ async def handle_admin_id(message: types.Message, state: FSMContext):
 
 
 # /no qo'shish
-@dp.message_handler(commands=["yangi_bino"])
+@dp.message_handler(commands=["new_building"])
 async def add_region(message: types.Message):
     await message.answer("Viloyatni tanlang: ", reply_markup=await viloyatlar_keyboard())
     await AddBinoState.qaysi_viloyatda.set()
@@ -154,7 +154,7 @@ async def add_region(message: types.Message, state: FSMContext):
 
 
 # Displaying admins
-@dp.message_handler(commands=['adminlar'])
+@dp.message_handler(commands=['admins'])
 async def show_admins(message: types.Message):
     text = ""
     admins = get_admins()

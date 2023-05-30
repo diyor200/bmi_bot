@@ -125,6 +125,24 @@ class Database:
         """
         return await self.execute(sql, viloyat_id, bino_id, ism, sabab, execute=True)
 
+    # Barcha chetlatilgan talabalarni viloyatva binoga qarab olish
+    async def get_all_outcasts_by_building(self, viloyat_id, bino_id):
+        sql = """select * from outcasts where
+                viloyat_id=$1 and bino_id=$2 order by ismi"""
+        return await self.execute(sql, viloyat_id, bino_id, fetch=True)
+
+    # Chetlatilgan talabani id siga qarab olish
+    async def get_outcast_reason(self, vil_id, bino_id, id):
+        sql = """select sababi from outcasts where
+                    viloyat_id=$1 and bino_id=$2 and id=$3"""
+        return await self.execute(sql, vil_id, bino_id, id, fetchrow=True)
+
+    # Chetlatilgan talabani sababini o'zgartirish
+    async def edit_outcast_reason(self, vid, bid, id, reason):
+        sql = """update outcasts set sababi=$1 where
+                 viloyat_id=$2 and bino_id=$3 and id=$4"""
+        return await self.execute(sql, reason, vid, bid, id)
+
     # chetlatilgan talabalarni viloyatga qarab olish
     async def get_info_outcasts_by_region(self, viloyat_id):
         sql = """

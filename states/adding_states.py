@@ -53,3 +53,10 @@ class GetInfosExamByRegion(StatesGroup):
 class OutcastsState(StatesGroup):
     viloyat = State()
     bino = State()
+
+
+class EditOutcastState(StatesGroup):
+    viloyat = State()
+    bino = State()
+    id = State()
+    reason = State()

@@ -195,20 +195,21 @@ async def get_region(message: types.Message, state: FSMContext):
 @dp.message_handler(state=EditOutcastState.bino)
 async def get_building(message: types.Message, state: FSMContext):
     bino = message.text
-    try:
-        bino_id = await db.get_building_id(bino)
-        print(bino_id[1])
-        data = await state.get_data()
-        viloyat_id = data.get('viloyat_id')
-        print(viloyat_id)
-        text = await get_outcasts(viloyat_id, bino_id)
-        print(text)
-        await message.answer(f"{text}Raqamini kiriting:")
-        await state.update_data({'bino_id': bino_id})
-        await EditOutcastState.id.set()
-    except:
-        await message.answer('Bunday bino mavjud emas! Qo\'shish uchun: /new_building')
-        await state.finish()
+    logging.info(bino)
+    # try:
+    bino_id = await db.get_building_id(bino)
+    14
+    data = await state.get_data()
+    viloyat_id = data.get('viloyat_id')
+    print(viloyat_id)
+    text = await get_outcasts(viloyat_id, bino_id)
+    print(text)
+    await message.answer(f"{text}Raqamini kiriting:")
+    await state.update_data({'bino_id': bino_id})
+    await EditOutcastState.id.set()
+    # except:
+    #     await message.answer('Bunday bino mavjud emas! Qo\'shish uchun: /new_building')
+    #     await state.finish()
 
 
 @dp.message_handler(state=EditOutcastState.viloyat)

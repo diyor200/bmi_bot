@@ -1,5 +1,5 @@
 import asyncio
-import pandas as pd
+# import pandas as pd
 from utils.db_api.postgresql import Database
 
 
@@ -31,13 +31,13 @@ from utils.db_api.postgresql import Database
 
 
 async def test():
-    k = []
     db = Database()
     await db.create()
-    info = await db.get_info_outcasts_by_region_building(1, 1)
-    print(info)
-    for i in info:
-        print(i)
+    await db.create_table_admins()
+    # info = await db.get_info_outcasts_by_region_building(1, 1)
+    # print(info)
+    # for i in info:
+    #     print(i)
     # print("Users jadvalini yaratamiz...")
     # # await db.drop_users()
     # await db.create_table_users()
@@ -100,10 +100,17 @@ async def test():
     # except:
     #     print("bad")
 
-    result = ""
-    outcasts = await db.get_all_outcasts_by_building(3, 1)
-    print(outcasts)
-    for i in outcasts:
-        result += f"{i[0]}. {i[3]}\n"
-    print(result)
+    # result = ""
+    # outcasts = await db.get_all_outcasts_by_building(3, 1)
+    # print(outcasts)
+    # for i in outcasts:
+    #     result += f"{i[0]}. {i[3]}\n"
+    # print(result)
+    admin = "1921681954"
+    try:
+        admin = await db.add_admin(admin)
+    except:
+        pass
+    admin = await db.get_admin()
+    print(admin[1][1])
 asyncio.run(test())

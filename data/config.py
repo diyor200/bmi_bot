@@ -14,6 +14,7 @@ ADMINS = env.list("ADMINS")  # adminlar ro'yxati
 IP = env.str("IP")  # Xosting ip manzili
 ACCESS_TOKEN = env.str("ACCESS_TOKEN")
 
+
 def add_admin_to_dotenv(value: str):
     # get the existing value
     existing_value = get_key(f"{BASE_DIR}/.env", 'ADMINS')

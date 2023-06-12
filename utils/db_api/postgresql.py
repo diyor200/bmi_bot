@@ -13,11 +13,11 @@ class Database:
     async def create(self):
         db_url = config.DATABASE_URL
         self.pool = await asyncpg.create_pool(
-            db_url
-            # user=config.DB_USER,
-            # password=config.DB_PASS,
-            # host=config.DB_HOST,
-            # database=config.DB_NAME
+            # db_url
+            user=config.DB_USER,
+            password=config.DB_PASS,
+            host=config.DB_HOST,
+            database=config.DB_NAME
         )
 
     async def execute(self, command, *args,
@@ -91,6 +91,14 @@ class Database:
         );
         """
         await self.execute(sql, execute=True)
+
+    async def create_table_admins(self):
+        sql = """
+        CREATE TABLE IF NOT EXISTS admins(
+            id SERIAL UNIQUE NOT NULL,
+            admin_id VARCHAR(20) NOT NULL 
+        );
+        """
 
     async def create_table_exams(self):
         sql = """
@@ -240,13 +248,13 @@ class Database:
 
     # Bino idisini olish
     async def get_building_id(self, bino_nomi):
-        sql = "select id from bino where bino_nomi= $1"
+        sql = "select id from bino where bino_nomi=$1"
         return await self.execute(sql, bino_nomi, fetchrow=True)
 
     # yangi admin qo'shish
-    async def add_admin(self, admin_id: int, name: str):
-        sql = "INSERT INTO admins(admin_id, admin_name) VALUES ($1, $2)"
-        return await self.execute(sql, admin_id, name, execute=True)
+    async def add_admin(self, admin_id: str):
+        sql = "INSERT INTO admins(admin_id) VALUES ($1)"
+        return await self.execute(sql, admin_id, execute=True)
 
     # adminlar ro'yhatini olish
     async def get_admin(self):
